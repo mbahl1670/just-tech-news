@@ -2,6 +2,7 @@ const router = require('express').Router();
 const sequelize = require('../../config/connection');
 const { Post, User, Vote, Comment } = require('../../models');
 const { restore } = require('../../models/Post');
+const withAuth = require('../../utils/auth');
 
 router.get('/', (req,res) => {
     console.log(`===================`);
@@ -69,12 +70,12 @@ router.get('/:id', (req,res) => {
     });
 });
 
-router.post('/', (req, res) => { // the module has this looking different than i do, TYPE MISMATCH, 13.4.4
+router.post('/', withAuth, (req, res) => { // the module has this looking different than i do, TYPE MISMATCH, 13.4.4
     // expects {title: 'Taskmaster goes public!', post_url: "https://yada-yaday", user_id: 1}
     Post.create({
         title: req.body.title,
         post_url: req.body.post_url,
-        user_id: req.body.user_id
+        user_id: req.session.user_id
     })
     .then(dbPostData => res.json(dbPostData))
     .catch(err => {
@@ -84,7 +85,7 @@ router.post('/', (req, res) => { // the module has this looking different than i
 });
 
 // PUT /api/posts/upvote
-router.put('/upvote', (req, res) => {
+router.put('/upvote', withAuth, (req, res) => {
     if (req.session) {
         Post.upvote({ ...req.body, user_id: req.session.user_id }, { Vote, Comment, User })
         .then(updatedVoteData => res.json(updatedVoteData))
@@ -95,7 +96,7 @@ router.put('/upvote', (req, res) => {
     }
 });
 
-router.post('/:id', (req,res) => {
+router.post('/:id', withAuth, (req,res) => {
     Post.update(
         {
             title: req.body.title
@@ -108,7 +109,7 @@ router.post('/:id', (req,res) => {
     );
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', withAuth, (req, res) => {
     Post.update(
         {
             title: req.body.title
@@ -132,7 +133,7 @@ router.put('/:id', (req, res) => {
     });
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', withAuth, (req, res) => {
     Post.destroy({
         where: {
             id: req.params.id
